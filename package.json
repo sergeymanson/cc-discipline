@@ -1,0 +1,36 @@
+{
+  "name": "@dartchuk-s/cc-discipline",
+  "version": "0.1.0",
+  "description": "Claude Code SessionStart hook that injects concise-output discipline rules to cut wasted tokens",
+  "author": "sergeymanson <manson047@gmail.com> (https://github.com/sergeymanson)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergeymanson/cc-discipline.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "homepage": "https://github.com/sergeymanson/cc-discipline#readme",
+  "bugs": {
+    "url": "https://github.com/sergeymanson/cc-discipline/issues"
+  },
+  "bin": {
+    "cc-discipline": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.4.0"
+  }
+}
