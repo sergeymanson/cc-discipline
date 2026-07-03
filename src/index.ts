@@ -21,15 +21,15 @@ async function main(): Promise<void> {
     // ignore: still emit the rules below
   }
 
-  const {enabled, level} = readConfig(process.env);
-  if (!enabled) {
+  const config = readConfig(process.env, process.argv.slice(2));
+  if (!config.enabled) {
     return;
   }
 
   const output: SessionStartOutput = {
     hookSpecificOutput: {
       hookEventName: 'SessionStart',
-      additionalContext: buildRules(level),
+      additionalContext: buildRules(config),
     },
   };
 

@@ -6,10 +6,18 @@
 [![node](https://img.shields.io/node/v/@dartchuk-s/cc-discipline)](https://nodejs.org)
 [![install size](https://packagephobia.com/badge?p=@dartchuk-s/cc-discipline)](https://packagephobia.com/result?p=@dartchuk-s/cc-discipline)
 
-A minimal, zero-config [Claude Code](https://claude.com/claude-code) `SessionStart` hook that
-injects a compact set of **output-discipline** rules at the start of every session, so the agent
-answers concisely and stops burning tokens on filler, preambles and recaps — without you having to
-repeat "be brief" in every prompt.
+A minimal, zero-config [Claude Code](https://claude.com/claude-code) `SessionStart` hook that sets
+two disciplines at the start of every session, so you stop repeating "be brief" and "keep it minimal"
+in every prompt:
+
+- **Speech** — terse **caveman speak**: telegraphic, function-word-free prose instead of filler,
+  preambles and recaps.
+- **Code** — strict coding discipline: boundary-only validation, signal-based logging, minimal
+  task-focused diffs, no speculative abstraction.
+
+> "I have fixed the bug on line 4; let me know if you need anything else" → "fixed bug, line 4."
+
+Each dimension is a `strict`/`normal` flag (see [Levels](#levels)).
 
 Published on npm: [`@dartchuk-s/cc-discipline`](https://www.npmjs.com/package/@dartchuk-s/cc-discipline).
 
@@ -20,20 +28,29 @@ rules to the session context:
 {
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "Output discipline (standard): keep responses concise and to the point.\n- Answer the question directly first; ..."
+    "additionalContext": "Output discipline.\n\nSpeech — caveman speak (strict): ...\n- Speak telegraphic caveman style: drop articles ...\n\nCode — laconic (strict): ...\n- Write the minimal code that fully and correctly solves the task ..."
   }
 }
 ```
 
 ## What it enforces
 
-Concision is applied to prose, never to technical content — code, commands, paths, error strings
-and URLs are always preserved verbatim, and correctness is never traded for brevity.
+Compression applies to prose only, never to technical content — code, commands, paths, error
+strings and URLs are always preserved verbatim, and correctness is never traded for brevity.
 
-- Direct answers first, no "Great question" / "Sure" preambles.
-- No closing summaries or "let me know if…" sign-offs.
-- Prefer the shortest complete-and-correct response: a line or a tight list over a paragraph.
-- No narrating intended actions before or after doing them.
+**Speech (caveman speak):**
+
+- Telegraphic style: drop articles, linking/auxiliary verbs and subject pronouns where meaning stays clear.
+- Content words only — nouns, verbs, key adjectives, numbers; fragments over full sentences.
+- No "Great question" / "Sure" preambles, no closing summaries or "let me know if…" sign-offs.
+- State the result, skip narrating how you got there.
+
+**Code (strict discipline):**
+
+- Validate untrusted data only at boundaries; trust internal typed contracts afterwards.
+- Log diagnostic signal only — failures, retries, fallbacks, external calls, state changes — not the happy path.
+- Minimal, task-focused diffs; no speculative abstractions, wrappers or broad refactors.
+- Preserve existing style and architecture unless the task requires changing them.
 
 ## Configure Claude Code
 
@@ -61,16 +78,38 @@ once per session and its output is merged into the session context.
 
 ## Levels
 
-Set `CC_DISCIPLINE_LEVEL` to tune how aggressive the rules are (default `standard`):
+Two independent dimensions are tuned by CLI flags on the hook command, each defaulting to `strict`:
 
-| Level      | Behaviour                                                                 |
-|------------|---------------------------------------------------------------------------|
-| `lite`     | Trims filler and hedging; keeps full sentences and normal explanations.   |
-| `standard` | Shortest complete answer; lists over paragraphs; no narration or recaps.  |
-| `strict`   | Minimum tokens that fully answer; fragments over sentences; no preamble.   |
+- `--speech <strict|normal>` — prose mode.
+- `--code <strict|normal>` — coding-discipline mode.
 
-Set `CC_DISCIPLINE=0` (or `false` / `off`) to disable the hook without removing it from settings —
-it emits nothing and the session runs untouched.
+Both accept `--flag value` and `--flag=value` forms; unknown values fall back to the default.
+
+**Speech** — how terse prose gets:
+
+| Mode | Behaviour |
+|---|---|
+| `strict` | Caveman speak: telegraphic, content words only, minimum tokens, often one line. |
+| `normal` | Ordinary concise prose in full sentences, just trimmed of filler and preamble. |
+
+**Code** — how disciplined generated code is:
+
+| Mode | Behaviour |
+|---|---|
+| `strict` | Boundary-only validation, signal-based logging, minimal task-focused diffs, no speculative abstraction. |
+| `normal` | Ordinary coding: follow repo style and the request, no strict minimal-patch/boundary/logging rules unless asked. |
+
+Set the levels right in the hook command:
+
+```json
+{
+  "type": "command",
+  "command": "npx -y @dartchuk-s/cc-discipline@latest --speech strict --code normal"
+}
+```
+
+Omit a flag to keep its default (`strict`). Set `CC_DISCIPLINE=0` (or `false` / `off`) to disable
+the hook without removing it from settings — it emits nothing and the session runs untouched.
 
 ```json
 {
@@ -80,7 +119,7 @@ it emits nothing and the session runs untouched.
         "hooks": [
           {
             "type": "command",
-            "command": "CC_DISCIPLINE_LEVEL=strict npx -y @dartchuk-s/cc-discipline@latest"
+            "command": "npx -y @dartchuk-s/cc-discipline@latest --speech strict --code strict"
           }
         ]
       }
@@ -100,7 +139,7 @@ npm install
 npm run build        # tsc -> dist/
 
 # smoke test
-echo '{"hook_event_name":"SessionStart","source":"startup"}' | CC_DISCIPLINE_LEVEL=strict node dist/index.js
+echo '{"hook_event_name":"SessionStart","source":"startup"}' | node dist/index.js --speech strict --code normal
 ```
 
 ## License
